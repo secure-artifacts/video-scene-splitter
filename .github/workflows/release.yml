@@ -10,6 +10,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-windows:
@@ -61,6 +63,16 @@ jobs:
         shell: powershell
         run: |
           Compress-Archive -Path "dist\VideoSceneSplitter.exe" -DestinationPath "dist\VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip" -Force
+
+      - name: Attest EXE build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/VideoSceneSplitter.exe
+
+      - name: Attest ZIP build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
