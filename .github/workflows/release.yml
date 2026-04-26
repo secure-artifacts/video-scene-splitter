@@ -30,18 +30,37 @@ jobs:
           python-version: "3.11"
 
       - name: Install Python dependencies
+        shell: powershell
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+          pip install PySide6 scenedetect[opencv] opencv-python pyinstaller
+
+      - name: Check project files
+        shell: powershell
+        run: |
+          dir
+          if (!(Test-Path "video_scene_splitter.py.py")) {
+            Write-Error "Cannot find video_scene_splitter.py.py"
+            exit 1
+          }
 
       - name: Build EXE with PyInstaller
+        shell: powershell
         run: |
-          pyinstaller --onefile --windowed --name VideoSceneSplitter video_scene_splitter.py
+          pyinstaller --onefile --windowed --name VideoSceneSplitter "video_scene_splitter.py.py"
+
+      - name: Check EXE file
+        shell: powershell
+        run: |
+          if (!(Test-Path "dist\VideoSceneSplitter.exe")) {
+            Write-Error "EXE build failed: dist\VideoSceneSplitter.exe not found"
+            exit 1
+          }
 
       - name: Create ZIP package
+        shell: powershell
         run: |
-          powershell Compress-Archive -Path dist\VideoSceneSplitter.exe -DestinationPath dist\VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip
+          Compress-Archive -Path "dist\VideoSceneSplitter.exe" -DestinationPath "dist\VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip" -Force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
