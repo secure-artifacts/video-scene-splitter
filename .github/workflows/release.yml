@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build Windows EXE and Release
 
 on:
   workflow_dispatch:
@@ -8,34 +8,40 @@ on:
         required: true
         default: "v1.0.0"
 
-  push:
-    tags:
-      - "v*"
-
 permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build-windows:
+    runs-on: windows-latest
 
     steps:
       - name: Set release version
+        shell: bash
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-          else
-            echo "RELEASE_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
-          fi
+          echo "RELEASE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Create release package
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Python dependencies
         run: |
-          mkdir -p dist
-          zip -r dist/video-scene-splitter-${RELEASE_VERSION}.zip . \
-            -x ".git/*" ".github/*" "__pycache__/*" "*.pyc" "dist/*"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build EXE with PyInstaller
+        run: |
+          pyinstaller --onefile --windowed --name VideoSceneSplitter video_scene_splitter.py
+
+      - name: Create ZIP package
+        run: |
+          powershell Compress-Archive -Path dist\VideoSceneSplitter.exe -DestinationPath dist\VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -44,4 +50,5 @@ jobs:
           name: Video Scene Splitter ${{ env.RELEASE_VERSION }}
           generate_release_notes: true
           files: |
-            dist/*.zip
+            dist/VideoSceneSplitter.exe
+            dist/VideoSceneSplitter-${{ env.RELEASE_VERSION }}-windows.zip
