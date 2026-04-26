@@ -47,7 +47,7 @@ jobs:
       - name: Build EXE with PyInstaller
         shell: powershell
         run: |
-          pyinstaller --onefile --windowed --name VideoSceneSplitter "video_scene_splitter.py"
+          pyinstaller --onefile --windowed --name VideoSceneSplitter --collect-submodules scenedetect "video_scene_splitter.py"
 
       - name: Check EXE file
         shell: powershell
